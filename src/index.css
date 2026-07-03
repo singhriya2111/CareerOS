@@ -1,0 +1,112 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@layer base {
+  :root {
+    /* Backgrounds: Using soft cornsilk/beige for light mode */
+    --background: #fffdf3; /* cornsilk-800 */
+    --foreground: #32210f; /* light-bronze-100 */
+    --card: #ffffff; /* pure white cards on off-white bg looks best */
+    --card-foreground: #533e08; /* papaya-whip-100 */
+    --primary: #88994f; /* tea-green-300 */
+    --primary-foreground: #ffffff;
+    --muted: #f5f7ef; /* tea-green-900 */
+    --muted-foreground: #79842c; /* beige-200 */
+    --border: #e1e6cf; /* tea-green-700 */
+
+    /* Obvious colors: Light and soft for light theme */
+    --color-green-100: #eef4ea;
+    --color-green-400: #93c47d;
+    --color-green-500: #6aa84f;
+    --color-green-600: #38761d;
+    --color-red-50: #fce8e6;
+    --color-red-100: #fad1ce;
+    --color-red-400: #e06666;
+    --color-red-500: #cc0000;
+    --color-red-600: #990000;
+    --color-blue-50: #e9edc9; /* mapping blue to beige in light mode to remove clash */
+    --color-blue-100: #ced788;
+    --color-blue-400: #88994f;
+    --color-blue-500: #5b6635;
+    --color-blue-600: #2d331a;
+    --color-yellow-50: #fefae0;
+    --color-yellow-100: #fbeb84;
+    --color-yellow-500: #baa206;
+    --color-yellow-600: #5d5103;
+    --color-orange-50: #faedcd;
+    --color-orange-100: #f2d079;
+    --color-orange-500: #a57b10;
+    --color-orange-600: #533e08;
+    --color-indigo-50: #e9edc9;
+    --color-indigo-100: #ced788;
+    --color-indigo-500: #5b6635;
+    --color-indigo-600: #2d331a;
+    --color-purple-500: #d4a373;
+    --color-purple-600: #c58341;
+  }
+
+  .dark {
+    /* Backgrounds: Using ink black palette */
+    --background: #03071e; /* ink_black-500 */
+    --foreground: #f6aec7; /* night_bordeaux-900 */
+    --card: #020411; /* ink_black-300 */
+    --card-foreground: #feddc9; /* cayenne_red-900 */
+    --primary: #dc2f02; /* red_ochre-500 */
+    --primary-foreground: #ffffff;
+    --muted: #160103; /* black_cherry-100 */
+    --muted-foreground: #fd7479; /* oxblood-800 */
+    --border: #3e0103; /* oxblood-200 */
+
+    /* Semantic colors: Fixed for high visibility in dark mode */
+    --color-green-100: #064e3b;
+    --color-green-400: #4ade80;
+    --color-green-500: #22c55e;
+    --color-green-600: #16a34a;
+    
+    --color-red-50: #2b0b0b;
+    --color-red-100: #3c0909;
+    --color-red-400: #f87171;
+    --color-red-500: #ef4444;
+    --color-red-600: #dc2626;
+
+    --color-blue-50: #020516; /* ink_black-400 */
+    --color-blue-100: #0b1b73; /* ink_black-600 */
+    --color-blue-400: #5068ee; /* ink_black-800 */
+    --color-blue-500: #a8b4f6; /* ink_black-900 */
+    --color-blue-600: #a8b4f6;
+    
+    --color-yellow-50: #422006;
+    --color-yellow-100: #713f12;
+    --color-yellow-500: #facc15;
+    --color-yellow-600: #eab308;
+    
+    --color-orange-50: #431407;
+    --color-orange-100: #7c2d12;
+    --color-orange-500: #fb923c;
+    --color-orange-600: #f97316;
+    --color-indigo-50: #0d2e3d;
+    --color-indigo-100: #1b5c7a;
+    --color-indigo-500: #8ecae6;
+    --color-indigo-600: #a5d5eb;
+    --color-purple-500: #fb8500;
+    --color-purple-600: #ff9e2f;
+  }
+
+  body {
+    @apply bg-[var(--background)] text-[var(--foreground)] font-sans antialiased transition-colors duration-200 ease-in-out;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-[var(--primary)] text-[var(--primary-foreground)] px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition-opacity shadow-sm border border-transparent dark:border-[var(--primary)];
+  }
+  .card-hover {
+    @apply hover:shadow-lg transition-shadow duration-300 ease-in-out border border-[var(--border)];
+  }
+  .glass-panel {
+    @apply bg-white/70 dark:bg-slate-800/70 backdrop-blur-md border border-white/20 dark:border-slate-700/30;
+  }
+}
