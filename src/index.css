@@ -48,16 +48,16 @@
   }
 
   .dark {
-    /* Backgrounds: Using ink black palette */
-    --background: #03071e; /* ink_black-500 */
-    --foreground: #f6aec7; /* night_bordeaux-900 */
-    --card: #020411; /* ink_black-300 */
-    --card-foreground: #feddc9; /* cayenne_red-900 */
-    --primary: #dc2f02; /* red_ochre-500 */
-    --primary-foreground: #ffffff;
-    --muted: #160103; /* black_cherry-100 */
-    --muted-foreground: #fd7479; /* oxblood-800 */
-    --border: #3e0103; /* oxblood-200 */
+    /* Backgrounds: Minimalist monochrome */
+    --background: #000000;
+    --foreground: #ffffff;
+    --card: #111111;
+    --card-foreground: #ffffff;
+    --primary: #ffffff;
+    --primary-foreground: #000000;
+    --muted: #222222;
+    --muted-foreground: #888888;
+    --border: #333333;
 
     /* Semantic colors: Fixed for high visibility in dark mode */
     --color-green-100: #064e3b;

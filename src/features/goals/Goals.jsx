@@ -13,7 +13,7 @@ const analyticsData = [
 
 const generateHeatmapData = () => {
   const data = [];
-  for (let i = 0; i < 90; i++) {
+  for (let i = 0; i < 364; i++) {
     const intensity = Math.floor(Math.random() * 5); 
     data.push(intensity);
   }
@@ -116,9 +116,6 @@ export default function Goals() {
     <div className="bg-[var(--card)] p-5 rounded-xl border border-[var(--border)] shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-lg flex items-center gap-2">
-          {timeframe === 'daily' && <CheckCircle2 className="w-5 h-5 text-green-500" />}
-          {timeframe === 'weekly' && <Calendar className="w-5 h-5 text-blue-500" />}
-          {timeframe === 'monthly' && <Target className="w-5 h-5 text-purple-500" />}
           {title}
         </h3>
         <button onClick={() => setActiveModalTimeframe(timeframe)} className="p-1 text-gray-400 hover:text-[var(--primary)] transition-colors">
@@ -196,14 +193,13 @@ export default function Goals() {
       {/* Heatmap Section */}
       <div className="bg-[var(--card)] p-6 rounded-xl border border-[var(--border)] shadow-sm">
         <div className="flex items-center gap-2 mb-4">
-          <Activity className="w-5 h-5 text-[var(--primary)]" />
-          <h3 className="font-semibold text-lg">Daily Progress Activity</h3>
+          <h3 className="font-semibold text-lg">Yearly Progress Activity</h3>
         </div>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="grid grid-rows-7 grid-flow-col gap-1 overflow-x-auto pb-4">
           {heatmapData.map((intensity, i) => (
             <div 
               key={i} 
-              className={`w-4 h-4 rounded-sm ${
+              className={`w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-sm flex-shrink-0 ${
                 intensity === 0 ? 'bg-gray-100 dark:bg-black/20' :
                 intensity === 1 ? 'bg-[var(--primary)]/30' :
                 intensity === 2 ? 'bg-[var(--primary)]/60' :
@@ -237,7 +233,6 @@ export default function Goals() {
         {/* Weekly Report */}
         <div className="bg-[var(--card)] p-6 rounded-xl border border-[var(--border)] shadow-sm">
           <div className="flex items-center gap-2 mb-6">
-            <TrendingUp className="w-6 h-6 text-blue-500" />
             <h3 className="font-semibold text-lg">Weekly Goal Completion</h3>
           </div>
           <div className="h-72">
@@ -257,7 +252,6 @@ export default function Goals() {
         {/* Job Tracker Status Pie Chart */}
         <div className="bg-[var(--card)] p-6 rounded-xl border border-[var(--border)] shadow-sm">
           <div className="flex items-center gap-2 mb-6">
-            <PieChartIcon className="w-6 h-6 text-purple-500" />
             <h3 className="font-semibold text-lg">Job Tracker Status</h3>
           </div>
           <div className="h-72">

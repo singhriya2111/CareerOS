@@ -1,4 +1,4 @@
-import { Flame, CheckCircle2, TrendingUp, Calendar } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 
 export default function Dashboard() {
   return (
@@ -9,9 +9,6 @@ export default function Dashboard() {
       </div>
 
       <div className="bg-[var(--primary)] rounded-2xl p-6 text-[var(--primary-foreground)] shadow-lg relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-10">
-          <Flame className="w-32 h-32" />
-        </div>
         <h2 className="text-xl font-semibold mb-2 relative z-10">Buckle Up Motivation Engine</h2>
         <p className="opacity-90 mb-4 relative z-10 max-w-xl">
           "Your momentum is increasing (+15%). Consistency is key. You've applied to 5 jobs this week and completed 3 DSA problems. Keep pushing forward."
@@ -26,17 +23,14 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { title: 'Weekly Goal', value: '4/5', sub: 'Applications', icon: Target },
-          { title: 'DSA Progress', value: '15', sub: 'Problems Solved', icon: Code2 },
-          { title: 'Interviews', value: '2', sub: 'Upcoming', icon: Calendar },
-          { title: 'Momentum', value: '85', sub: 'Top 10%', icon: TrendingUp },
+          { title: 'Weekly Goal', value: '4/5', sub: 'Applications' },
+          { title: 'DSA Progress', value: '15', sub: 'Problems Solved' },
+          { title: 'Interviews', value: '2', sub: 'Upcoming' },
+          { title: 'Momentum', value: '85', sub: 'Top 10%' },
         ].map((stat, i) => (
           <div key={i} className="bg-[var(--card)] rounded-xl p-5 border border-[var(--border)] shadow-sm card-hover">
             <div className="flex items-start justify-between mb-2">
               <span className="text-gray-500 dark:text-slate-400 text-sm font-medium">{stat.title}</span>
-              <div className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg">
-                <stat.icon className="w-5 h-5" />
-              </div>
             </div>
             <h3 className="text-2xl font-bold mb-1">{stat.value}</h3>
             <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
@@ -89,6 +83,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
-// Quick icons imports missing above
-import { Target, Code2 } from 'lucide-react';

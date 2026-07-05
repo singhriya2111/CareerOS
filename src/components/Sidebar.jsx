@@ -26,7 +26,17 @@ const navItems = [
 export default function Sidebar() {
   return (
     <aside className="w-64 border-r border-[var(--border)] bg-[var(--card)] hidden md:flex flex-col">
-      <div className="h-16 flex items-center px-6 border-b border-[var(--border)]">
+      <div className="h-16 flex items-center px-6 border-b border-[var(--border)] gap-2">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#tealGradient)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+          <defs>
+            <linearGradient id="tealGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#0f766e" />
+              <stop offset="50%" stopColor="#14b8a6" />
+              <stop offset="100%" stopColor="#5eead4" />
+            </linearGradient>
+          </defs>
+          <path d="M 18 7 A 8 8 0 1 0 18 17 M 12 12 Q 16 18, 22 6 M 16 6 L 22 6 L 22 12" />
+        </svg>
         <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-[var(--primary)] to-[var(--primary)] opacity-90 bg-clip-text text-transparent">
           CareerOS
         </span>

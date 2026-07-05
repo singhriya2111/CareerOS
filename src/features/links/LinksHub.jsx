@@ -56,7 +56,6 @@ export default function LinksHub() {
         {categories.map(category => (
           <div key={category}>
             <div className="flex items-center gap-2 mb-4 border-b border-[var(--border)] pb-2">
-              <Folder className="w-5 h-5 text-[var(--primary)]" />
               <h2 className="text-lg font-semibold">{category}</h2>
               <span className="text-xs bg-gray-100 dark:bg-black/20 text-gray-600 dark:text-slate-300 px-2 py-0.5 rounded-full ml-2">
                 {links.filter(l => l.category === category).length}
@@ -73,9 +72,6 @@ export default function LinksHub() {
                   className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-4 shadow-sm hover:shadow-md transition-all group flex items-start justify-between"
                 >
                   <div className="flex items-start gap-3 overflow-hidden">
-                    <div className="w-10 h-10 rounded-lg bg-[var(--primary)]/10 flex items-center justify-center flex-shrink-0 text-[var(--primary)] mt-0.5">
-                      <Link2 className="w-5 h-5" />
-                    </div>
                     <div className="overflow-hidden">
                       <h3 className="font-medium text-gray-900 dark:text-white truncate">{link.title}</h3>
                       <p className="text-sm text-gray-500 dark:text-slate-400 truncate mt-0.5">{link.url}</p>

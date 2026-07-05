@@ -66,7 +66,6 @@ export default function CareerVault() {
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Code className="w-5 h-5 text-blue-500" />
               Project Snippets
             </h3>
             <button onClick={() => setActiveModal('project')} className="btn-primary flex items-center gap-1 py-1.5 px-3 text-sm">
@@ -121,7 +120,6 @@ export default function CareerVault() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold flex items-center gap-2">
-              <Star className="w-5 h-5 text-yellow-500" />
               Skills Stack
             </h3>
             <button onClick={() => setActiveModal('skill')} className="p-1.5 text-gray-400 hover:text-[var(--primary)] hover:bg-gray-100 dark:hover:bg-black/20 rounded-md transition-colors">
@@ -206,7 +204,7 @@ export default function CareerVault() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Category</label>
-                <select value={skillData.category} onChange={e => setSkillData({...skillData, category: e.target.value})} className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-transparent focus:ring-2 focus:ring-[var(--primary)] outline-none">
+                <select value={skillData.category} onChange={e => setSkillData({...skillData, category: e.target.value})} className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-[var(--primary)] outline-none">
                   <option value="Frontend">Frontend</option>
                   <option value="Backend">Backend</option>
                   <option value="Database">Database</option>

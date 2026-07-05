@@ -59,9 +59,6 @@ export default function Certifications() {
             </div>
             
             <div className="flex items-start gap-4 mb-4">
-              <div className="w-12 h-12 rounded-lg bg-[var(--primary)]/10 flex items-center justify-center flex-shrink-0 text-[var(--primary)]">
-                <Award className="w-6 h-6" />
-              </div>
               <div>
                 <h3 className="font-semibold text-gray-900 dark:text-white leading-tight mb-1 pr-6">{cert.title}</h3>
                 <p className="text-sm text-gray-500 dark:text-slate-400">{cert.issuer}</p>
@@ -128,7 +125,7 @@ export default function Certifications() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Type</label>
-                  <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-transparent focus:ring-2 focus:ring-[var(--primary)] outline-none">
+                  <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-white dark:bg-slate-800 focus:ring-2 focus:ring-[var(--primary)] outline-none">
                     <option value="Credential">Credential</option>
                     <option value="Course">Course</option>
                     <option value="Degree">Degree</option>
