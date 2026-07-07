@@ -1,21 +1,35 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Bell, Search, Sun, Moon, Plus, LogOut, User, Settings, CheckCircle2 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { useJobs } from '../hooks/useJobs';
+import { useDSA } from '../hooks/useDSA';
 
 export default function TopNav() {
   const { theme, toggleTheme } = useTheme();
   const { signOut, user } = useAuth();
+  const navigate = useNavigate();
+  
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSearch, setShowSearch] = useState(false);
   
   const navRef = useRef(null);
+  const searchRef = useRef(null);
+
+  const { data: jobs } = useJobs();
+  const { data: dsa } = useDSA();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (navRef.current && !navRef.current.contains(event.target)) {
         setShowProfileDropdown(false);
         setShowNotifications(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSearch(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -27,16 +41,75 @@ export default function TopNav() {
     { id: 2, text: 'Review your upcoming DSA problems.', time: '1h ago' }
   ]);
 
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return { jobs: [], dsa: [] };
+    const q = searchQuery.toLowerCase();
+    
+    const matchedJobs = jobs 
+      ? jobs.filter(j => j.company.toLowerCase().includes(q) || j.role.toLowerCase().includes(q))
+      : [];
+      
+    const matchedDSA = dsa 
+      ? dsa.filter(d => d.title.toLowerCase().includes(q) || d.pattern.toLowerCase().includes(q))
+      : [];
+      
+    return { jobs: matchedJobs.slice(0, 3), dsa: matchedDSA.slice(0, 3) };
+  }, [searchQuery, jobs, dsa]);
+
   return (
     <header className="h-16 flex items-center justify-between px-6 border-b border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-md sticky top-0 z-30" ref={navRef}>
       <div className="flex items-center gap-4 flex-1">
-        <div className="relative w-full max-w-md hidden sm:block">
+        <div className="relative w-full max-w-md hidden sm:block" ref={searchRef}>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input 
             type="text" 
-            placeholder="Search jobs, resumes, notes..." 
+            placeholder="Search jobs, DSA problems..." 
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setShowSearch(true);
+            }}
+            onFocus={() => setShowSearch(true)}
             className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-100 dark:bg-black/20 border-transparent focus:bg-white dark:focus:bg-slate-900 focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20 transition-all text-sm outline-none"
           />
+          
+          {showSearch && searchQuery.trim() && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--card)] rounded-xl border border-[var(--border)] shadow-xl z-50 overflow-hidden">
+               {searchResults.jobs.length > 0 && (
+                 <div className="py-2">
+                   <div className="px-3 pb-1 text-xs font-bold text-gray-400 uppercase tracking-wider">Jobs</div>
+                   {searchResults.jobs.map(j => (
+                     <button 
+                       key={j.id} 
+                       onClick={() => { setShowSearch(false); setSearchQuery(''); navigate('/jobs'); }}
+                       className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                     >
+                       <p className="text-sm font-medium">{j.role}</p>
+                       <p className="text-xs text-gray-500">{j.company} • {j.column_id}</p>
+                     </button>
+                   ))}
+                 </div>
+               )}
+               {searchResults.dsa.length > 0 && (
+                 <div className="py-2 border-t border-[var(--border)]">
+                   <div className="px-3 pb-1 text-xs font-bold text-gray-400 uppercase tracking-wider">DSA Problems</div>
+                   {searchResults.dsa.map(d => (
+                     <button 
+                       key={d.id} 
+                       onClick={() => { setShowSearch(false); setSearchQuery(''); navigate('/dsa'); }}
+                       className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                     >
+                       <p className="text-sm font-medium">{d.title}</p>
+                       <p className="text-xs text-gray-500">{d.difficulty} • {d.pattern}</p>
+                     </button>
+                   ))}
+                 </div>
+               )}
+               {searchResults.jobs.length === 0 && searchResults.dsa.length === 0 && (
+                 <div className="p-4 text-center text-sm text-gray-500">No results found for "{searchQuery}"</div>
+               )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -109,13 +182,13 @@ export default function TopNav() {
               </div>
               <div className="py-1">
                 <button 
-                  onClick={() => { alert('Profile view coming soon!'); setShowProfileDropdown(false); }}
+                  onClick={() => { setShowProfileDropdown(false); navigate('/settings'); }}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors"
                 >
                   <User className="w-4 h-4" /> Profile
                 </button>
                 <button 
-                  onClick={() => { alert('Settings view coming soon!'); setShowProfileDropdown(false); }}
+                  onClick={() => { setShowProfileDropdown(false); navigate('/settings'); }}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors"
                 >
                   <Settings className="w-4 h-4" /> Settings

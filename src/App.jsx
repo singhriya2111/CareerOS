@@ -11,6 +11,7 @@ import SystemDesignHub from './features/system-design/SystemDesignHub';
 import Certifications from './features/certifications/Certifications';
 import LinksHub from './features/links/LinksHub';
 import Auth from './features/auth/Auth';
+import Settings from './features/settings/Settings';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -38,6 +39,7 @@ function App() {
               <Route path="vault" element={<CareerVault />} />
               <Route path="certifications" element={<Certifications />} />
               <Route path="links" element={<LinksHub />} />
+              <Route path="settings" element={<Settings />} />
             </Route>
           </Routes>
         </BrowserRouter>

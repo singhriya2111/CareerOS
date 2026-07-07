@@ -115,6 +115,7 @@ export default function DSAHub() {
   };
 
   const currentMonth = new Date().getMonth();
+  const currentMonthName = new Date().toLocaleString('default', { month: 'long' });
   const currentYear = new Date().getFullYear();
   const weeklyCounts = [0, 0, 0, 0];
   
@@ -220,7 +221,7 @@ export default function DSAHub() {
         </div>
         
         <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 shadow-sm flex flex-col">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Weekly Solves (This Month)</h3>
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Weekly Solves ({currentMonthName})</h3>
           <div className="h-48 w-full">
             <Bar data={barData} options={barOptions} />
           </div>
@@ -278,7 +279,7 @@ export default function DSAHub() {
                       {problem.difficulty}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-gray-500 dark:text-slate-400">
+                  <td className="px-6 py-4 text-gray-500 dark:text-slate-400 max-w-[150px] truncate" title={problem.pattern}>
                     {problem.pattern}
                   </td>
                   <td className="px-6 py-4 text-right opacity-0 group-hover:opacity-100 transition-opacity">
