@@ -60,16 +60,6 @@ export default function Sidebar() {
           </NavLink>
         ))}
       </nav>
-      
-      <div className="p-4 border-t border-[var(--border)]">
-        <div className="bg-black/5 dark:bg-black/20 rounded-xl p-4 border border-[var(--border)] shadow-sm">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Momentum Score</p>
-          <div className="flex items-end gap-2">
-            <span className="text-2xl font-bold text-[var(--primary)]">85</span>
-            <span className="text-xs text-green-600 dark:text-green-400 font-medium pb-1">+12% this week</span>
-          </div>
-        </div>
-      </div>
     </aside>
   );
 }

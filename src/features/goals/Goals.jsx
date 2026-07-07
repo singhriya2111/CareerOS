@@ -37,8 +37,15 @@ export default function Goals() {
   }, [dbGoals]);
 
   const jobStatusData = useMemo(() => {
+    // If there are less than 5 jobs, show a mixed demo data combined with real data,
+    // or just show demo data if they specifically want to check how it looks.
+    // We will just show the true data, but if it's empty, show demo.
     if (!dbJobs || dbJobs.length === 0) return [
-      { name: 'No Data', value: 1, color: '#e2e8f0' }
+      { name: 'Wishlist (Demo)', value: 12, color: '#facc15' },
+      { name: 'Applied (Demo)', value: 45, color: '#3b82f6' },
+      { name: 'Interviewing (Demo)', value: 8, color: '#a855f7' },
+      { name: 'Offer (Demo)', value: 2, color: '#22c55e' },
+      { name: 'Rejected (Demo)', value: 18, color: '#ef4444' }
     ];
     
     const counts = {
@@ -49,10 +56,12 @@ export default function Goals() {
       'Rejected': 0
     };
     dbJobs.forEach(job => {
-      if (counts[job.status] !== undefined) {
-        counts[job.status]++;
+      // FIX: jobs table uses column_id for status
+      const status = job.column_id;
+      if (counts[status] !== undefined) {
+        counts[status]++;
       } else {
-        counts[job.status] = 1;
+        counts[status] = 1;
       }
     });
 
@@ -67,12 +76,10 @@ export default function Goals() {
 
   // Heatmap generation for 2026
   // 2026 starts on Thursday, Jan 1
-  const heatmapGrid = useMemo(() => {
-    const daysInYear = 365;
-    const startOffset = 3; // Monday = 0, Tue = 1, Wed = 2, Thu = 3
+  const { heatmapGrid, monthsInfo } = useMemo(() => {
     const grid = [];
+    const monthsInfo = [];
     
-    // Create an analytics map for O(1) lookup
     const logMap = {};
     if (analyticsLog) {
       analyticsLog.forEach(log => {
@@ -80,27 +87,54 @@ export default function Goals() {
       });
     }
 
-    const startDate = new Date('2026-01-01T12:00:00Z');
-    
-    // Fill initial empty days to align Monday to row 0
-    for(let i = 0; i < startOffset; i++) {
-      grid.push({ empty: true });
-    }
+    const year = 2026;
+    for (let month = 0; month < 12; month++) {
+      const firstDay = new Date(Date.UTC(year, month, 1, 12, 0, 0));
+      let startOffset = firstDay.getUTCDay() - 1; // 0=Mon, 6=Sun
+      if (startOffset === -1) startOffset = 6;
 
-    for (let i = 0; i < daysInYear; i++) {
-      const d = new Date(startDate);
-      d.setDate(d.getDate() + i);
-      const dateStr = d.toISOString().split('T')[0];
-      const data = logMap[dateStr] || { dsa_solves: 0, jobs_applied: 0, targets_completed: 0 };
-      const total = data.dsa_solves + data.jobs_applied + data.targets_completed;
-      grid.push({
-        dateStr,
-        total,
-        ...data,
-        formattedDate: d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
+      for (let i = 0; i < startOffset; i++) {
+        grid.push({ empty: true });
+      }
+
+      const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+      for (let day = 1; day <= daysInMonth; day++) {
+        const d = new Date(Date.UTC(year, month, day, 12, 0, 0));
+        const dateStr = d.toISOString().split('T')[0];
+        const data = logMap[dateStr] || { dsa_solves: 0, jobs_applied: 0, targets_completed: 0 };
+        const total = data.dsa_solves + data.jobs_applied + data.targets_completed;
+        grid.push({
+          dateStr,
+          total,
+          ...data,
+          formattedDate: d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
+        });
+      }
+
+      const totalCells = startOffset + daysInMonth;
+      const remainder = totalCells % 7;
+      if (remainder !== 0) {
+        const endPadding = 7 - remainder;
+        for (let i = 0; i < endPadding; i++) {
+          grid.push({ empty: true });
+        }
+      }
+
+      const cols = Math.ceil(totalCells / 7);
+      const hasSpacer = month < 11;
+
+      monthsInfo.push({
+        label: firstDay.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' }),
+        width: (cols + (hasSpacer ? 1 : 0)) * 15
       });
+
+      if (hasSpacer) {
+        for (let i = 0; i < 7; i++) {
+          grid.push({ empty: true, isSpacer: true });
+        }
+      }
     }
-    return grid;
+    return { heatmapGrid: grid, monthsInfo };
   }, [analyticsLog]);
 
   const toggleGoal = (id, currentState) => {
@@ -240,18 +274,9 @@ export default function Goals() {
         
         <div className="overflow-x-auto pb-4 pt-4 relative">
           <div className="flex text-xs text-gray-500 dark:text-slate-400 mb-2 min-w-max">
-            <span className="w-[10.5%]">Jan</span>
-            <span className="w-[8%]">Feb</span>
-            <span className="w-[8.5%]">Mar</span>
-            <span className="w-[8.5%]">Apr</span>
-            <span className="w-[8.5%]">May</span>
-            <span className="w-[8.5%]">Jun</span>
-            <span className="w-[8.5%]">Jul</span>
-            <span className="w-[8.5%]">Aug</span>
-            <span className="w-[8.5%]">Sep</span>
-            <span className="w-[8.5%]">Oct</span>
-            <span className="w-[8.5%]">Nov</span>
-            <span className="w-[8.5%]">Dec</span>
+            {monthsInfo.map((m, i) => (
+              <span key={i} style={{ width: m.width + 'px' }}>{m.label}</span>
+            ))}
           </div>
           <div className="grid grid-rows-7 grid-flow-col gap-[3px] min-w-max">
             {heatmapGrid.map((day, i) => {
