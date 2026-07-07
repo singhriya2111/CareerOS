@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
-import { Target, CheckCircle2, Circle, TrendingUp, Calendar, Plus, PieChart as PieChartIcon, Activity, Loader2, X, Pencil, Trash2 } from 'lucide-react';
+import { Target, CheckCircle2, Circle, Plus, Loader2, X, Pencil, Trash2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { useGoals, useAddGoal, useUpdateGoal, useDeleteGoal } from '../../hooks/useGoals';
 import { useJobs } from '../../hooks/useJobs';
+import { useAnalytics } from '../../hooks/useAnalytics';
 
 const analyticsData = [
   { name: 'Week 1', completed: 15, missed: 3 },
@@ -11,19 +12,10 @@ const analyticsData = [
   { name: 'Week 4', completed: 22, missed: 1 },
 ];
 
-const generateHeatmapData = () => {
-  const data = [];
-  for (let i = 0; i < 364; i++) {
-    const intensity = Math.floor(Math.random() * 5); 
-    data.push(intensity);
-  }
-  return data;
-};
-const heatmapData = generateHeatmapData();
-
 export default function Goals() {
   const { data: dbGoals, isLoading: goalsLoading, error: goalsError } = useGoals();
   const { data: dbJobs, isLoading: jobsLoading } = useJobs();
+  const { data: analyticsLog } = useAnalytics();
   
   const updateGoal = useUpdateGoal();
   const addGoal = useAddGoal();
@@ -32,6 +24,8 @@ export default function Goals() {
   const [activeModalTimeframe, setActiveModalTimeframe] = useState(null);
   const [editingGoal, setEditingGoal] = useState(null);
   const [newGoalText, setNewGoalText] = useState('');
+  
+  const [hoveredDay, setHoveredDay] = useState(null);
 
   const goals = useMemo(() => {
     if (!dbGoals) return { daily: [], weekly: [], monthly: [] };
@@ -71,6 +65,44 @@ export default function Goals() {
     ].filter(s => s.value > 0);
   }, [dbJobs]);
 
+  // Heatmap generation for 2026
+  // 2026 starts on Thursday, Jan 1
+  const heatmapGrid = useMemo(() => {
+    const daysInYear = 365;
+    const startOffset = 3; // Monday = 0, Tue = 1, Wed = 2, Thu = 3
+    const grid = [];
+    
+    // Create an analytics map for O(1) lookup
+    const logMap = {};
+    if (analyticsLog) {
+      analyticsLog.forEach(log => {
+        logMap[log.date] = log;
+      });
+    }
+
+    const startDate = new Date('2026-01-01T12:00:00Z');
+    
+    // Fill initial empty days to align Monday to row 0
+    for(let i = 0; i < startOffset; i++) {
+      grid.push({ empty: true });
+    }
+
+    for (let i = 0; i < daysInYear; i++) {
+      const d = new Date(startDate);
+      d.setDate(d.getDate() + i);
+      const dateStr = d.toISOString().split('T')[0];
+      const data = logMap[dateStr] || { dsa_solves: 0, jobs_applied: 0, targets_completed: 0 };
+      const total = data.dsa_solves + data.jobs_applied + data.targets_completed;
+      grid.push({
+        dateStr,
+        total,
+        ...data,
+        formattedDate: d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
+      });
+    }
+    return grid;
+  }, [analyticsLog]);
+
   const toggleGoal = (id, currentState) => {
     updateGoal.mutate({ id, completed: !currentState });
   };
@@ -109,6 +141,13 @@ export default function Goals() {
   const handleDeleteGoal = (id) => {
     if (window.confirm('Are you sure you want to delete this goal?')) {
       deleteGoal.mutate(id);
+    }
+  };
+
+  const handleSimulateCleanup = () => {
+    if (window.confirm('This will purge all checked (completed) goals while retaining unchecked ones. Continue?')) {
+      const completedGoals = dbGoals.filter(g => g.completed);
+      completedGoals.forEach(g => deleteGoal.mutate(g.id));
     }
   };
 
@@ -188,40 +227,96 @@ export default function Goals() {
           <h1 className="text-2xl font-bold tracking-tight">Goals & Analytics</h1>
           <p className="text-sm text-gray-500 dark:text-slate-400">Track your daily, weekly, and monthly career objectives</p>
         </div>
+        <button onClick={handleSimulateCleanup} className="btn-secondary text-sm">
+          Simulate Period Cleanup
+        </button>
       </div>
 
       {/* Heatmap Section */}
-      <div className="bg-[var(--card)] p-6 rounded-xl border border-[var(--border)] shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <h3 className="font-semibold text-lg">Yearly Progress Activity</h3>
+      <div className="bg-[var(--card)] p-6 rounded-xl border border-[var(--border)] shadow-sm overflow-hidden relative">
+        <div className="flex items-center gap-2 mb-2">
+          <h3 className="font-semibold text-lg">Yearly Progress Activity (2026)</h3>
         </div>
-        <div className="grid grid-rows-7 grid-flow-col gap-1 overflow-x-auto pb-4">
-          {heatmapData.map((intensity, i) => (
-            <div 
-              key={i} 
-              className={`w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-sm flex-shrink-0 ${
-                intensity === 0 ? 'bg-gray-100 dark:bg-black/20' :
-                intensity === 1 ? 'bg-[var(--primary)]/30' :
-                intensity === 2 ? 'bg-[var(--primary)]/60' :
-                intensity === 3 ? 'bg-[var(--primary)]/80' :
-                'bg-[var(--primary)]'
-              }`}
-              title={`Activity level: ${intensity}`}
-            />
-          ))}
+        
+        <div className="overflow-x-auto pb-4 pt-4 relative">
+          <div className="flex text-xs text-gray-500 dark:text-slate-400 mb-2 min-w-max">
+            <span className="w-[10.5%]">Jan</span>
+            <span className="w-[8%]">Feb</span>
+            <span className="w-[8.5%]">Mar</span>
+            <span className="w-[8.5%]">Apr</span>
+            <span className="w-[8.5%]">May</span>
+            <span className="w-[8.5%]">Jun</span>
+            <span className="w-[8.5%]">Jul</span>
+            <span className="w-[8.5%]">Aug</span>
+            <span className="w-[8.5%]">Sep</span>
+            <span className="w-[8.5%]">Oct</span>
+            <span className="w-[8.5%]">Nov</span>
+            <span className="w-[8.5%]">Dec</span>
+          </div>
+          <div className="grid grid-rows-7 grid-flow-col gap-[3px] min-w-max">
+            {heatmapGrid.map((day, i) => {
+              if (day.empty) return <div key={i} className="w-[12px] h-[12px] rounded-sm bg-transparent" />;
+              
+              const intensity = day.total;
+              let colorClass = 'bg-slate-200 dark:bg-slate-800';
+              if (intensity === 1) colorClass = 'bg-emerald-200 dark:bg-emerald-900';
+              else if (intensity === 2) colorClass = 'bg-emerald-300 dark:bg-emerald-800';
+              else if (intensity >= 3 && intensity <= 4) colorClass = 'bg-emerald-500 dark:bg-emerald-700';
+              else if (intensity >= 5) colorClass = 'bg-emerald-700 dark:bg-emerald-500';
+
+              return (
+                <div 
+                  key={i} 
+                  className={`w-[12px] h-[12px] rounded-sm flex-shrink-0 cursor-pointer ${colorClass}`}
+                  onMouseEnter={(e) => {
+                    const rect = e.target.getBoundingClientRect();
+                    setHoveredDay({
+                      ...day,
+                      rect
+                    });
+                  }}
+                  onMouseLeave={() => setHoveredDay(null)}
+                />
+              );
+            })}
+          </div>
         </div>
-        <div className="mt-3 flex items-center justify-end gap-2 text-xs text-gray-500 dark:text-slate-400">
+        <div className="mt-2 flex items-center justify-end gap-2 text-xs text-gray-500 dark:text-slate-400">
           <span>Less</span>
-          <div className="flex gap-1">
-            <div className="w-3 h-3 rounded-sm bg-gray-100 dark:bg-black/20"></div>
-            <div className="w-3 h-3 rounded-sm bg-[var(--primary)]/30"></div>
-            <div className="w-3 h-3 rounded-sm bg-[var(--primary)]/60"></div>
-            <div className="w-3 h-3 rounded-sm bg-[var(--primary)]/80"></div>
-            <div className="w-3 h-3 rounded-sm bg-[var(--primary)]"></div>
+          <div className="flex gap-[3px]">
+            <div className="w-[12px] h-[12px] rounded-sm bg-slate-200 dark:bg-slate-800"></div>
+            <div className="w-[12px] h-[12px] rounded-sm bg-emerald-200 dark:bg-emerald-900"></div>
+            <div className="w-[12px] h-[12px] rounded-sm bg-emerald-300 dark:bg-emerald-800"></div>
+            <div className="w-[12px] h-[12px] rounded-sm bg-emerald-500 dark:bg-emerald-700"></div>
+            <div className="w-[12px] h-[12px] rounded-sm bg-emerald-700 dark:bg-emerald-500"></div>
           </div>
           <span>More</span>
         </div>
       </div>
+
+      {/* Tooltip Portal Rendering */}
+      {hoveredDay && (
+        <div 
+          className="fixed z-[100] bg-gray-900 text-white text-xs rounded shadow-lg p-3 pointer-events-none w-64 transform -translate-y-full"
+          style={{ 
+            left: Math.min(Math.max(hoveredDay.rect.left + 6 - 128, 16), window.innerWidth - 272),
+            top: hoveredDay.rect.top - 10 
+          }}
+        >
+          <div className="font-semibold mb-1 text-gray-200">{hoveredDay.formattedDate}</div>
+          <div className="text-gray-300">
+            {hoveredDay.total} activity entries:<br/>
+            • {hoveredDay.dsa_solves} DSA Solved<br/>
+            • {hoveredDay.jobs_applied} Jobs Applied<br/>
+            • {hoveredDay.targets_completed} Checklist Targets Met
+          </div>
+          {/* Tooltip pointer arrow - positioned relative to the target to stay aligned even when tooltip shifts */}
+          <div 
+            className="absolute bottom-[-4px] transform -translate-x-1/2 rotate-45 w-2 h-2 bg-gray-900"
+            style={{ left: Math.min(Math.max(hoveredDay.rect.left + 6 - Math.max(hoveredDay.rect.left + 6 - 128, 16), 12), 244) }}
+          ></div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {renderGoalSection('Daily Goals', 'daily', goals.daily)}
@@ -230,7 +325,6 @@ export default function Goals() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-        {/* Weekly Report */}
         <div className="bg-[var(--card)] p-6 rounded-xl border border-[var(--border)] shadow-sm">
           <div className="flex items-center gap-2 mb-6">
             <h3 className="font-semibold text-lg">Weekly Goal Completion</h3>
@@ -249,7 +343,6 @@ export default function Goals() {
           </div>
         </div>
 
-        {/* Job Tracker Status Pie Chart */}
         <div className="bg-[var(--card)] p-6 rounded-xl border border-[var(--border)] shadow-sm">
           <div className="flex items-center gap-2 mb-6">
             <h3 className="font-semibold text-lg">Job Tracker Status</h3>

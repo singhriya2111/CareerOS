@@ -1,15 +1,22 @@
-import { useState, useEffect } from 'react';
-import { Search, Filter, CheckCircle2, Circle, Clock, ExternalLink, Plus, Loader2, X, Trash2, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, Circle, Clock, Plus, Loader2, X, Trash2, RefreshCw, Star, Info } from 'lucide-react';
 import { useDSA, useAddDSA, useUpdateDSA, useDeleteDSA } from '../../hooks/useDSA';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { useAnalytics, incrementAnalytics } from '../../hooks/useAnalytics';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
+import { Doughnut, Bar } from 'react-chartjs-2';
+
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
 export default function DSAHub() {
   const { data: problems, isLoading, error } = useDSA();
   const addDSA = useAddDSA();
   const updateDSA = useUpdateDSA();
   const deleteDSA = useDeleteDSA();
+  
+  const { data: analyticsLog } = useAnalytics();
 
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -17,14 +24,14 @@ export default function DSAHub() {
   const [lcUsername, setLcUsername] = useState(() => localStorage.getItem('leetcode_username') || '');
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
+  const [showStarredOnly, setShowStarredOnly] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     difficulty: 'Easy',
     pattern: '',
-    status: 'Unsolved',
-    next_review: '-'
+    status: 'Unsolved'
   });
 
   const handleSubmit = (e) => {
@@ -32,7 +39,7 @@ export default function DSAHub() {
     addDSA.mutate(formData, {
       onSuccess: () => {
         setIsModalOpen(false);
-        setFormData({ title: '', difficulty: 'Easy', pattern: '', status: 'Unsolved', next_review: '-' });
+        setFormData({ title: '', difficulty: 'Easy', pattern: '', status: 'Unsolved' });
       }
     });
   };
@@ -40,6 +47,10 @@ export default function DSAHub() {
   const handleStatusToggle = (problem) => {
     const nextStatus = problem.status === 'Unsolved' ? 'Review' : problem.status === 'Review' ? 'Solved' : 'Unsolved';
     updateDSA.mutate({ id: problem.id, status: nextStatus });
+  };
+
+  const handleStarToggle = (problem) => {
+    updateDSA.mutate({ id: problem.id, starred: !problem.starred });
   };
 
   const handleSync = async () => {
@@ -71,6 +82,7 @@ export default function DSAHub() {
       setSyncMessage(`Successfully synced ${data.count} new solved problems to your roadmap!`);
       if (data.count > 0) {
         queryClient.invalidateQueries({ queryKey: ['dsa', user?.id] });
+        incrementAnalytics(user.id, 'dsa', data.count);
       }
       setTimeout(() => setSyncMessage(''), 5000);
     } catch (err) {
@@ -84,9 +96,67 @@ export default function DSAHub() {
   if (isLoading) return <div className="flex h-full items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-[var(--primary)]" /></div>;
   if (error) return <div className="flex h-full items-center justify-center text-red-500">Error: {error.message}</div>;
 
+  const filteredProblems = problems ? problems.filter(p => showStarredOnly ? p.starred : true) : [];
+  const solvedProblems = problems ? problems.filter(p => p.status === 'Solved') : [];
+  
+  const diffCounts = solvedProblems.reduce((acc, curr) => {
+    acc[curr.difficulty] = (acc[curr.difficulty] || 0) + 1;
+    return acc;
+  }, { Easy: 0, Medium: 0, Hard: 0 });
+
+  const doughnutData = {
+    labels: ['Easy', 'Medium', 'Hard'],
+    datasets: [{
+      data: [diffCounts.Easy, diffCounts.Medium, diffCounts.Hard],
+      backgroundColor: ['#10b981', '#f59e0b', '#e11d48'],
+      borderWidth: 0,
+      hoverOffset: 4
+    }]
+  };
+
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  const weeklyCounts = [0, 0, 0, 0];
+  
+  if (analyticsLog) {
+    analyticsLog.forEach(log => {
+      const d = new Date(log.date);
+      // Ensure date object interprets the YYYY-MM-DD locally to avoid timezone shifts if possible,
+      // but since it's just 'YYYY-MM-DD', new Date() might parse as UTC. We'll use getUTCMonth if needed.
+      // Actually standard getMonth is fine if we just want rough buckets.
+      const logYear = parseInt(log.date.split('-')[0]);
+      const logMonth = parseInt(log.date.split('-')[1]) - 1;
+      const logDay = parseInt(log.date.split('-')[2]);
+
+      if (logMonth === currentMonth && logYear === currentYear && log.dsa_solves > 0) {
+        if (logDay <= 7) weeklyCounts[0] += log.dsa_solves;
+        else if (logDay <= 14) weeklyCounts[1] += log.dsa_solves;
+        else if (logDay <= 21) weeklyCounts[2] += log.dsa_solves;
+        else weeklyCounts[3] += log.dsa_solves;
+      }
+    });
+  }
+
+  const barData = {
+    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+    datasets: [{
+      label: 'Solved',
+      data: weeklyCounts,
+      backgroundColor: '#3b82f6',
+      borderRadius: 4,
+    }]
+  };
+  
+  const barOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+  };
+
   return (
     <div className="space-y-6 relative">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">DSA Hub</h1>
           <p className="text-sm text-gray-500 dark:text-slate-400">Spaced repetition tracker for LeetCode</p>
@@ -117,7 +187,7 @@ export default function DSAHub() {
       </div>
 
       {syncMessage && (
-        <div className={`p-4 rounded-xl text-sm font-medium border animate-in fade-in slide-in-from-top-4 mb-6 ${syncMessage.includes('Failed')
+        <div className={`p-4 rounded-xl text-sm font-medium border animate-in fade-in slide-in-from-top-4 ${syncMessage.includes('Failed')
             ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-400'
             : 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:border-green-900/50 dark:text-green-400'
           }`}>
@@ -126,28 +196,72 @@ export default function DSAHub() {
       )}
 
       {lcUsername && !syncMessage && (
-        <div className="flex items-center gap-2 mb-4 text-xs font-medium text-gray-500 dark:text-slate-400">
+        <div className="flex items-center gap-2 text-xs font-medium text-gray-500 dark:text-slate-400">
           <span className="w-2 h-2 rounded-full bg-green-500"></span>
           Connected to LeetCode: {lcUsername}
         </div>
       )}
 
-      <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-sm overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 shadow-sm flex flex-col">
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Difficulty Distribution</h3>
+          <div className="h-48 w-full flex items-center justify-center relative">
+            {solvedProblems.length > 0 ? (
+              <Doughnut data={doughnutData} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }} />
+            ) : (
+              <div className="text-sm text-gray-400">No solved problems yet</div>
+            )}
+            {solvedProblems.length > 0 && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none pr-24">
+                <span className="text-2xl font-bold">{solvedProblems.length}</span>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 shadow-sm flex flex-col">
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Weekly Solves (This Month)</h3>
+          <div className="h-48 w-full">
+            <Bar data={barData} options={barOptions} />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900/50 rounded-xl p-3 flex items-start gap-3 text-sm text-yellow-800 dark:text-yellow-500">
+        <Info className="w-5 h-5 shrink-0 mt-0.5" />
+        <p>Unstarred items logged prior to today are cleared automatically at 5:00 AM. Star important problems to keep them in your backlog.</p>
+      </div>
+
+      <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-sm overflow-hidden mt-6">
+        <div className="p-4 border-b border-[var(--border)] flex justify-between items-center bg-gray-50/50 dark:bg-black/10">
+          <h3 className="font-semibold">Problem Backlog</h3>
+          <button 
+            onClick={() => setShowStarredOnly(!showStarredOnly)}
+            className={`text-sm px-3 py-1.5 rounded-md font-medium transition-colors ${showStarredOnly ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-500' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-300 dark:hover:bg-slate-700'}`}
+          >
+            {showStarredOnly ? '★ Showing Starred Only' : 'Show Starred Only'}
+          </button>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-slate-400 font-medium border-b border-[var(--border)]">
               <tr>
+                <th className="px-6 py-4 w-12"></th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4">Problem</th>
                 <th className="px-6 py-4">Difficulty</th>
                 <th className="px-6 py-4">Pattern / Topic</th>
-                <th className="px-6 py-4">Next Review</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border)]">
-              {problems && problems.map(problem => (
+              {filteredProblems && filteredProblems.map(problem => (
                 <tr key={problem.id} className="hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors group">
+                  <td className="px-6 py-4">
+                    <button onClick={() => handleStarToggle(problem)} className="focus:outline-none transition-transform hover:scale-110">
+                      <Star className={`w-5 h-5 ${problem.starred ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300 dark:text-slate-600 hover:text-yellow-400'}`} />
+                    </button>
+                  </td>
                   <td className="px-6 py-4 cursor-pointer" onClick={() => handleStatusToggle(problem)}>
                     {problem.status === 'Solved' && <CheckCircle2 className="w-5 h-5 text-green-500" />}
                     {problem.status === 'Review' && <Clock className="w-5 h-5 text-yellow-500" />}
@@ -167,13 +281,6 @@ export default function DSAHub() {
                   <td className="px-6 py-4 text-gray-500 dark:text-slate-400">
                     {problem.pattern}
                   </td>
-                  <td className="px-6 py-4">
-                    <span className={`flex items-center gap-1.5 text-sm ${problem.next_review === 'Today' ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-500 dark:text-slate-400'
-                      }`}>
-                      {problem.next_review !== '-' && <Clock className="w-3.5 h-3.5" />}
-                      {problem.next_review}
-                    </span>
-                  </td>
                   <td className="px-6 py-4 text-right opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => {
@@ -186,9 +293,9 @@ export default function DSAHub() {
                   </td>
                 </tr>
               ))}
-              {(!problems || problems.length === 0) && (
+              {(!filteredProblems || filteredProblems.length === 0) && (
                 <tr>
-                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">No problems tracked yet.</td>
+                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">No problems match your criteria.</td>
                 </tr>
               )}
             </tbody>
@@ -226,15 +333,9 @@ export default function DSAHub() {
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Pattern</label>
-                  <input required value={formData.pattern} onChange={e => setFormData({ ...formData, pattern: e.target.value })} className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-transparent focus:ring-2 focus:ring-[var(--primary)] outline-none" placeholder="e.g. Sliding Window" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Next Review</label>
-                  <input value={formData.next_review} onChange={e => setFormData({ ...formData, next_review: e.target.value })} className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-transparent focus:ring-2 focus:ring-[var(--primary)] outline-none" placeholder="e.g. Tomorrow or -" />
-                </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Pattern</label>
+                <input required value={formData.pattern} onChange={e => setFormData({ ...formData, pattern: e.target.value })} className="w-full px-3 py-2 border border-[var(--border)] rounded-lg bg-transparent focus:ring-2 focus:ring-[var(--primary)] outline-none" placeholder="e.g. Sliding Window" />
               </div>
               <button type="submit" disabled={addDSA.isPending} className="w-full btn-primary mt-2">
                 {addDSA.isPending ? 'Saving...' : 'Save Problem'}

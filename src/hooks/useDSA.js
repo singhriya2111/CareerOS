@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { incrementAnalytics } from './useAnalytics';
 
 export function useDSA() {
   const { user } = useAuth();
@@ -23,6 +24,11 @@ export function useAddDSA() {
     mutationFn: async (newProblem) => {
       const { data, error } = await supabase.from('dsa_problems').insert([{ ...newProblem, user_id: user.id }]).select().single();
       if (error) throw error;
+      
+      if (newProblem.status === 'Solved') {
+        incrementAnalytics(user.id, 'dsa', 1);
+      }
+      
       return data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['dsa', user?.id] }),
