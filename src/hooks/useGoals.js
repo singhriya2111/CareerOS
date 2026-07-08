@@ -61,13 +61,14 @@ export function useUpdateGoal() {
       if (error) throw error;
       
       if (updates.completed === true) {
-        incrementAnalytics(user.id, 'target', 1);
+        await incrementAnalytics(user.id, 'target', 1);
       }
       
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['analytics', user?.id] });
     },
   });
 }

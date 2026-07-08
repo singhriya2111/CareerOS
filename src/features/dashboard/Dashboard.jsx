@@ -56,26 +56,30 @@ export default function Dashboard() {
         }
       });
 
-      let checkDate = new Date();
-      while (true) {
-        // format local date to YYYY-MM-DD
+      let streak = 0;
+      const checkDate = new Date();
+      checkDate.setHours(12, 0, 0, 0); // Set to noon to avoid DST infinite loops
+
+      for (let i = 0; i < 3650; i++) { // Cap at 10 years to completely prevent infinite loops
         const y = checkDate.getFullYear();
         const m = String(checkDate.getMonth() + 1).padStart(2, '0');
         const d = String(checkDate.getDate()).padStart(2, '0');
         const dateStr = `${y}-${m}-${d}`;
         
         const log = logMap[dateStr];
-        if (log && (log.dsa_solves > 0 || log.jobs_applied > 0 || log.targets_completed > 0)) {
-          streak++;
-          checkDate.setDate(checkDate.getDate() - 1);
+        const hasActivity = log && (log.dsa_solves > 0 || log.jobs_applied > 0 || log.targets_completed > 0);
+
+        if (i === 0) {
+          if (hasActivity) streak++;
         } else {
-          const isTodayStr = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`;
-          if (dateStr === isTodayStr) {
-             checkDate.setDate(checkDate.getDate() - 1);
+          if (hasActivity) {
+            streak++;
           } else {
-             break;
+            break;
           }
         }
+        // Safely move back one day by subtracting 24 hours from noon
+        checkDate.setDate(checkDate.getDate() - 1);
       }
     }
     return { jobsThisWeek: jWeek, dsaThisWeek: dWeek, currentStreak: streak };

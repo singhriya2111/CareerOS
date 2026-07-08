@@ -16,7 +16,14 @@ import Profile from './features/settings/Profile';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: false,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -28,9 +35,24 @@ import { Navigate } from 'react-router-dom';
 import { useProfile } from './hooks/useProfile';
 
 function HomeRoute() {
-  const { data: profile, isLoading } = useProfile();
+  const { data: profile, isLoading, isError, error, status, fetchStatus } = useProfile();
+  const { user } = useAuth();
   
-  if (isLoading) return <div className="h-full flex items-center justify-center text-gray-500">Loading workspace...</div>;
+  if (isLoading) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center text-gray-500 space-y-4">
+        <div>Loading workspace...</div>
+        <div className="text-xs text-left bg-gray-100 dark:bg-slate-800 p-4 rounded max-w-md w-full overflow-auto font-mono">
+          <p>Debug Info:</p>
+          <p>Status: {status}</p>
+          <p>Fetch Status: {fetchStatus}</p>
+          <p>User exists: {!!user ? 'Yes' : 'No'}</p>
+          <p>Is Error: {isError ? 'Yes' : 'No'}</p>
+          {error && <p className="text-red-500">Error: {error.message}</p>}
+        </div>
+      </div>
+    );
+  }
   
   if (profile?.default_tab) {
     switch (profile.default_tab) {

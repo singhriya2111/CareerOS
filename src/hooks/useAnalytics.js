@@ -19,6 +19,7 @@ export function useAnalytics() {
       return data;
     },
     enabled: !!user,
+    retry: false,
   });
 }
 

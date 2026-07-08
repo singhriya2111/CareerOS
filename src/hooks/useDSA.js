@@ -26,12 +26,15 @@ export function useAddDSA() {
       if (error) throw error;
       
       if (newProblem.status === 'Solved') {
-        incrementAnalytics(user.id, 'dsa', 1);
+        await incrementAnalytics(user.id, 'dsa', 1);
       }
       
       return data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['dsa', user?.id] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dsa', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['analytics', user?.id] });
+    },
   });
 }
 
@@ -44,12 +47,15 @@ export function useUpdateDSA() {
       if (error) throw error;
       
       if (updates.status === 'Solved') {
-        incrementAnalytics(user.id, 'dsa', 1);
+        await incrementAnalytics(user.id, 'dsa', 1);
       }
       
       return data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['dsa', user?.id] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dsa', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['analytics', user?.id] });
+    },
   });
 }
 

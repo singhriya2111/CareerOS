@@ -37,12 +37,13 @@ export function useAddJob() {
       
       if (error) throw error;
       
-      incrementAnalytics(user.id, 'job', 1);
+      await incrementAnalytics(user.id, 'job', 1);
       
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['jobs', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['analytics', user?.id] });
     },
   });
 }
