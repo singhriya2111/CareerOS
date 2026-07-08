@@ -62,6 +62,8 @@ export function useUpdateGoal() {
       
       if (updates.completed === true) {
         await incrementAnalytics(user.id, 'target', 1);
+      } else if (updates.completed === false) {
+        await incrementAnalytics(user.id, 'target', -1);
       }
       
       return data;

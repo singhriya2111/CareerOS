@@ -15,8 +15,10 @@ export function useAnalytics() {
         .eq('user_id', user.id)
         .order('date', { ascending: true });
       
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error("useAnalytics error:", error);
+      }
+      return data || [];
     },
     enabled: !!user,
     retry: false,
@@ -42,14 +44,16 @@ export const incrementAnalytics = async (userId, type, amount = 1) => {
   const payload = {
     user_id: userId,
     date: dateStr,
-    dsa_solves: (existing?.dsa_solves || 0) + (type === 'dsa' ? amount : 0),
-    jobs_applied: (existing?.jobs_applied || 0) + (type === 'job' ? amount : 0),
-    targets_completed: (existing?.targets_completed || 0) + (type === 'target' ? amount : 0)
+    dsa_solves: Math.max(0, (existing?.dsa_solves || 0) + (type === 'dsa' ? amount : 0)),
+    jobs_applied: Math.max(0, (existing?.jobs_applied || 0) + (type === 'job' ? amount : 0)),
+    targets_completed: Math.max(0, (existing?.targets_completed || 0) + (type === 'target' ? amount : 0))
   };
 
   if (existing) {
-    await supabase.from('analytics_log').update(payload).eq('id', existing.id);
+    const { error: updateError } = await supabase.from('analytics_log').update(payload).eq('id', existing.id);
+    if (updateError) console.error("Update error:", updateError);
   } else {
-    await supabase.from('analytics_log').upsert([payload], { onConflict: 'user_id, date' });
+    const { error: insertError } = await supabase.from('analytics_log').insert([payload]);
+    if (insertError) console.error("Insert error:", insertError);
   }
 };

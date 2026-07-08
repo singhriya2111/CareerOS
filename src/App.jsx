@@ -38,21 +38,8 @@ function HomeRoute() {
   const { data: profile, isLoading, isError, error, status, fetchStatus } = useProfile();
   const { user } = useAuth();
   
-  if (isLoading) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center text-gray-500 space-y-4">
-        <div>Loading workspace...</div>
-        <div className="text-xs text-left bg-gray-100 dark:bg-slate-800 p-4 rounded max-w-md w-full overflow-auto font-mono">
-          <p>Debug Info:</p>
-          <p>Status: {status}</p>
-          <p>Fetch Status: {fetchStatus}</p>
-          <p>User exists: {!!user ? 'Yes' : 'No'}</p>
-          <p>Is Error: {isError ? 'Yes' : 'No'}</p>
-          {error && <p className="text-red-500">Error: {error.message}</p>}
-        </div>
-      </div>
-    );
-  }
+  // We no longer block on isLoading to prevent infinite UI hangs.
+  // The dashboard will simply render without custom settings until the profile loads.
   
   if (profile?.default_tab) {
     switch (profile.default_tab) {
@@ -86,6 +73,7 @@ function App() {
               <Route path="links" element={<LinksHub />} />
               <Route path="profile" element={<Profile />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>
         </BrowserRouter>

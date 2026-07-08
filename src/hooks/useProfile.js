@@ -10,7 +10,25 @@ export function useProfile() {
   return useQuery({
     queryKey: ['profile', user?.id],
     queryFn: async () => {
-      return {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        if (error.code === '42P01' || error.message.includes('relation "user_profiles" does not exist')) {
+          console.warn("user_profiles table does not exist yet. Please run the SQL migration.");
+        } else {
+          throw error;
+        }
+      }
+
+      if (data && data.theme) {
+        setTheme(data.theme);
+      }
+
+      return data || {
         user_id: user.id,
         display_name: user.email.split('@')[0],
         dsa_target: 0,
