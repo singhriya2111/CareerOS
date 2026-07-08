@@ -42,6 +42,11 @@ export function useUpdateDSA() {
     mutationFn: async ({ id, ...updates }) => {
       const { data, error } = await supabase.from('dsa_problems').update(updates).eq('id', id).eq('user_id', user.id).select().single();
       if (error) throw error;
+      
+      if (updates.status === 'Solved') {
+        incrementAnalytics(user.id, 'dsa', 1);
+      }
+      
       return data;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['dsa', user?.id] }),

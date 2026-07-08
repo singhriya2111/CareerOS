@@ -74,9 +74,8 @@ export default function Goals() {
     ].filter(s => s.value > 0);
   }, [dbJobs]);
 
-  // Heatmap generation for 2026
-  // 2026 starts on Thursday, Jan 1
-  const { heatmapGrid, monthsInfo } = useMemo(() => {
+  // Destructure totalColumns for the grid inline style
+  const { heatmapGrid, monthsInfo, totalColumns } = useMemo(() => {
     const grid = [];
     const monthsInfo = [];
     
@@ -88,13 +87,22 @@ export default function Goals() {
     }
 
     const year = 2026;
+    let colCounter = 0;
+    
     for (let month = 0; month < 12; month++) {
       const firstDay = new Date(Date.UTC(year, month, 1, 12, 0, 0));
-      let startOffset = firstDay.getUTCDay() - 1; // 0=Mon, 6=Sun
+      let startOffset = firstDay.getUTCDay() - 1; 
       if (startOffset === -1) startOffset = 6;
+      
+      monthsInfo.push({
+        label: firstDay.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' }),
+        colIndex: colCounter
+      });
 
+      let monthCells = 0;
       for (let i = 0; i < startOffset; i++) {
         grid.push({ empty: true });
+        monthCells++;
       }
 
       const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
@@ -104,37 +112,36 @@ export default function Goals() {
         const data = logMap[dateStr] || { dsa_solves: 0, jobs_applied: 0, targets_completed: 0 };
         const total = data.dsa_solves + data.jobs_applied + data.targets_completed;
         grid.push({
+          empty: false,
           dateStr,
           total,
           ...data,
           formattedDate: d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
         });
+        monthCells++;
       }
 
-      const totalCells = startOffset + daysInMonth;
-      const remainder = totalCells % 7;
+      // Pad the end of the month to complete the final column
+      const remainder = monthCells % 7;
       if (remainder !== 0) {
         const endPadding = 7 - remainder;
         for (let i = 0; i < endPadding; i++) {
           grid.push({ empty: true });
+          monthCells++;
         }
       }
+      
+      colCounter += (monthCells / 7);
 
-      const cols = Math.ceil(totalCells / 7);
-      const hasSpacer = month < 11;
-
-      monthsInfo.push({
-        label: firstDay.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' }),
-        width: (cols + (hasSpacer ? 1 : 0)) * 15
-      });
-
-      if (hasSpacer) {
+      // Add a 1-column spacer between months
+      if (month < 11) {
         for (let i = 0; i < 7; i++) {
           grid.push({ empty: true, isSpacer: true });
         }
+        colCounter += 1;
       }
     }
-    return { heatmapGrid: grid, monthsInfo };
+    return { heatmapGrid: grid, monthsInfo, totalColumns: colCounter };
   }, [analyticsLog]);
 
   const toggleGoal = (id, currentState) => {
@@ -272,27 +279,35 @@ export default function Goals() {
           <h3 className="font-semibold text-lg">Yearly Progress Activity (2026)</h3>
         </div>
         
-        <div className="overflow-x-auto pb-4 pt-4 relative">
-          <div className="flex text-xs text-gray-500 dark:text-slate-400 mb-2 min-w-max">
+        <div className="pb-4 pt-4 w-full relative">
+          <div className="text-xs text-gray-500 dark:text-slate-400 mb-2 relative h-4 w-full">
             {monthsInfo.map((m, i) => (
-              <span key={i} style={{ width: m.width + 'px' }}>{m.label}</span>
+              <div key={i} style={{ position: 'absolute', left: `${(m.colIndex / totalColumns) * 100}%` }}>
+                {m.label}
+              </div>
             ))}
           </div>
-          <div className="grid grid-rows-7 grid-flow-col gap-[3px] min-w-max">
+          <div 
+            className="grid grid-flow-col gap-[2px] w-full"
+            style={{ 
+              gridTemplateRows: 'repeat(7, minmax(0, 1fr))',
+              gridTemplateColumns: `repeat(${totalColumns}, minmax(0, 1fr))`
+            }}
+          >
             {heatmapGrid.map((day, i) => {
-              if (day.empty) return <div key={i} className="w-[12px] h-[12px] rounded-sm bg-transparent" />;
+              if (day.empty) return <div key={i} className={`aspect-square w-full rounded-[2px] bg-transparent ${day.isSpacer ? 'pointer-events-none' : ''}`} />;
               
               const intensity = day.total;
-              let colorClass = 'bg-slate-200 dark:bg-slate-800';
-              if (intensity === 1) colorClass = 'bg-emerald-200 dark:bg-emerald-900';
-              else if (intensity === 2) colorClass = 'bg-emerald-300 dark:bg-emerald-800';
-              else if (intensity >= 3 && intensity <= 4) colorClass = 'bg-emerald-500 dark:bg-emerald-700';
-              else if (intensity >= 5) colorClass = 'bg-emerald-700 dark:bg-emerald-500';
+              let colorClass = 'bg-[#e2e8f0] dark:bg-[#1e293b]';
+              if (intensity === 1) colorClass = 'bg-[#d1fae5] dark:bg-[#064e3b]';
+              else if (intensity === 2) colorClass = 'bg-[#6ee7b7] dark:bg-[#065f46]';
+              else if (intensity >= 3 && intensity <= 4) colorClass = 'bg-[#10b981] dark:bg-[#047857]';
+              else if (intensity >= 5) colorClass = 'bg-[#047857] dark:bg-[#10b981]';
 
               return (
                 <div 
                   key={i} 
-                  className={`w-[12px] h-[12px] rounded-sm flex-shrink-0 cursor-pointer ${colorClass}`}
+                  className={`aspect-square w-full rounded-[2px] cursor-pointer transition-colors ${colorClass}`}
                   onMouseEnter={(e) => {
                     const rect = e.target.getBoundingClientRect();
                     setHoveredDay({
@@ -308,12 +323,12 @@ export default function Goals() {
         </div>
         <div className="mt-2 flex items-center justify-end gap-2 text-xs text-gray-500 dark:text-slate-400">
           <span>Less</span>
-          <div className="flex gap-[3px]">
-            <div className="w-[12px] h-[12px] rounded-sm bg-slate-200 dark:bg-slate-800"></div>
-            <div className="w-[12px] h-[12px] rounded-sm bg-emerald-200 dark:bg-emerald-900"></div>
-            <div className="w-[12px] h-[12px] rounded-sm bg-emerald-300 dark:bg-emerald-800"></div>
-            <div className="w-[12px] h-[12px] rounded-sm bg-emerald-500 dark:bg-emerald-700"></div>
-            <div className="w-[12px] h-[12px] rounded-sm bg-emerald-700 dark:bg-emerald-500"></div>
+          <div className="flex gap-[2px]">
+            <div className="w-[12px] h-[12px] rounded-[1px] bg-[#e2e8f0] dark:bg-[#1e293b]"></div>
+            <div className="w-[12px] h-[12px] rounded-[1px] bg-[#d1fae5] dark:bg-[#064e3b]"></div>
+            <div className="w-[12px] h-[12px] rounded-[1px] bg-[#6ee7b7] dark:bg-[#065f46]"></div>
+            <div className="w-[12px] h-[12px] rounded-[1px] bg-[#10b981] dark:bg-[#047857]"></div>
+            <div className="w-[12px] h-[12px] rounded-[1px] bg-[#047857] dark:bg-[#10b981]"></div>
           </div>
           <span>More</span>
         </div>
@@ -330,10 +345,12 @@ export default function Goals() {
         >
           <div className="font-semibold mb-1 text-gray-200">{hoveredDay.formattedDate}</div>
           <div className="text-gray-300">
-            {hoveredDay.total} activity entries:<br/>
-            • {hoveredDay.dsa_solves} DSA Solved<br/>
-            • {hoveredDay.jobs_applied} Jobs Applied<br/>
-            • {hoveredDay.targets_completed} Checklist Targets Met
+            <div className="mb-1 border-b border-gray-700 pb-1">{hoveredDay.total} activity entries:</div>
+            <div className="flex flex-col gap-1 mt-1">
+              <span>• {hoveredDay.dsa_solves} DSA Solved</span>
+              <span>• {hoveredDay.jobs_applied} Jobs Applied</span>
+              <span>• {hoveredDay.targets_completed} Checklist Targets Met</span>
+            </div>
           </div>
           {/* Tooltip pointer arrow - positioned relative to the target to stay aligned even when tooltip shifts */}
           <div 

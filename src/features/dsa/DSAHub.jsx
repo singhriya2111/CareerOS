@@ -119,21 +119,16 @@ export default function DSAHub() {
   const currentYear = new Date().getFullYear();
   const weeklyCounts = [0, 0, 0, 0];
   
-  if (analyticsLog) {
-    analyticsLog.forEach(log => {
-      const d = new Date(log.date);
-      // Ensure date object interprets the YYYY-MM-DD locally to avoid timezone shifts if possible,
-      // but since it's just 'YYYY-MM-DD', new Date() might parse as UTC. We'll use getUTCMonth if needed.
-      // Actually standard getMonth is fine if we just want rough buckets.
-      const logYear = parseInt(log.date.split('-')[0]);
-      const logMonth = parseInt(log.date.split('-')[1]) - 1;
-      const logDay = parseInt(log.date.split('-')[2]);
-
-      if (logMonth === currentMonth && logYear === currentYear && log.dsa_solves > 0) {
-        if (logDay <= 7) weeklyCounts[0] += log.dsa_solves;
-        else if (logDay <= 14) weeklyCounts[1] += log.dsa_solves;
-        else if (logDay <= 21) weeklyCounts[2] += log.dsa_solves;
-        else weeklyCounts[3] += log.dsa_solves;
+  if (solvedProblems) {
+    solvedProblems.forEach(p => {
+      if (!p.created_at) return;
+      const d = new Date(p.created_at);
+      if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+        const date = d.getDate();
+        if (date <= 7) weeklyCounts[0]++;
+        else if (date <= 14) weeklyCounts[1]++;
+        else if (date <= 21) weeklyCounts[2]++;
+        else weeklyCounts[3]++;
       }
     });
   }
@@ -208,12 +203,12 @@ export default function DSAHub() {
           <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Difficulty Distribution</h3>
           <div className="h-48 w-full flex items-center justify-center relative">
             {solvedProblems.length > 0 ? (
-              <Doughnut data={doughnutData} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }} />
+              <Doughnut data={doughnutData} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }} />
             ) : (
               <div className="text-sm text-gray-400">No solved problems yet</div>
             )}
             {solvedProblems.length > 0 && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none pr-24">
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-8">
                 <span className="text-2xl font-bold">{solvedProblems.length}</span>
               </div>
             )}

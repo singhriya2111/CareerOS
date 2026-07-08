@@ -36,6 +36,9 @@ export function useAddJob() {
         .single();
       
       if (error) throw error;
+      
+      incrementAnalytics(user.id, 'job', 1);
+      
       return data;
     },
     onSuccess: () => {
