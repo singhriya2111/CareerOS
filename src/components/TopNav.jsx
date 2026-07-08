@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { Bell, Search, Sun, Moon, Plus, LogOut, User, Settings, CheckCircle2 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { useProfile } from '../hooks/useProfile';
 import { useNavigate } from 'react-router-dom';
 import { useJobs } from '../hooks/useJobs';
 import { useDSA } from '../hooks/useDSA';
@@ -21,6 +22,13 @@ export default function TopNav() {
 
   const { data: jobs } = useJobs();
   const { data: dsa } = useDSA();
+  const { data: profile } = useProfile();
+
+  const displayName = profile?.display_name || user?.email?.split('@')[0] || 'User';
+  const initial = displayName.charAt(0).toUpperCase();
+  const colorIndex = initial.charCodeAt(0) % 5;
+  const colors = ['bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500'];
+  const avatarColor = colors[colorIndex];
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -169,20 +177,20 @@ export default function TopNav() {
               setShowProfileDropdown(!showProfileDropdown);
               setShowNotifications(false);
             }}
-            className="w-8 h-8 rounded-full bg-[var(--primary)] text-[var(--primary-foreground)] flex items-center justify-center font-semibold text-sm shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
+            className={`w-8 h-8 rounded-full ${avatarColor} text-white flex items-center justify-center font-semibold text-sm shadow-sm cursor-pointer hover:opacity-90 transition-opacity`}
           >
-            {user?.email?.charAt(0).toUpperCase() || 'U'}
+            {initial}
           </button>
           
           {showProfileDropdown && (
             <div className="absolute right-0 mt-2 w-56 bg-[var(--card)] rounded-xl border border-[var(--border)] shadow-xl z-50 py-1 overflow-hidden">
               <div className="px-4 py-3 border-b border-[var(--border)] bg-gray-50/50 dark:bg-black/10">
                 <p className="text-xs text-gray-500 dark:text-slate-400 font-medium mb-0.5">Signed in as</p>
-                <p className="text-sm font-semibold truncate text-gray-900 dark:text-white">{user?.email}</p>
+                <p className="text-sm font-semibold truncate text-gray-900 dark:text-white">{displayName}</p>
               </div>
               <div className="py-1">
                 <button 
-                  onClick={() => { setShowProfileDropdown(false); navigate('/settings'); }}
+                  onClick={() => { setShowProfileDropdown(false); navigate('/profile'); }}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 flex items-center gap-2 transition-colors"
                 >
                   <User className="w-4 h-4" /> Profile

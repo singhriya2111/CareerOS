@@ -3,15 +3,31 @@ import { CheckCircle2, Loader2, Calendar } from 'lucide-react';
 import { useJobs } from '../../hooks/useJobs';
 import { useDSA } from '../../hooks/useDSA';
 import { useAnalytics } from '../../hooks/useAnalytics';
+import { useProfile } from '../../hooks/useProfile';
 
 export default function Dashboard() {
   const { data: dbJobs, isLoading: jobsLoading } = useJobs();
   const { data: dbDSA, isLoading: dsaLoading } = useDSA();
   const { data: analyticsLog, isLoading: analyticsLoading } = useAnalytics();
+  const { data: profile } = useProfile();
 
   const isLoading = jobsLoading || dsaLoading || analyticsLoading;
 
   const todayFormatted = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+  const { jobsToday, dsaToday } = useMemo(() => {
+    let jToday = 0;
+    let dToday = 0;
+    if (analyticsLog) {
+      const isTodayStr = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`;
+      const log = analyticsLog.find(l => l.date === isTodayStr);
+      if (log) {
+        jToday = log.jobs_applied;
+        dToday = log.dsa_solves;
+      }
+    }
+    return { jobsToday: jToday, dsaToday: dToday };
+  }, [analyticsLog]);
 
   const { jobsThisWeek, dsaThisWeek, currentStreak } = useMemo(() => {
     let jWeek = 0;
@@ -117,7 +133,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Welcome back, {profile?.display_name ? profile.display_name : 'User'}</h1>
         <p className="text-sm text-gray-500 dark:text-slate-400">{todayFormatted}</p>
       </div>
 
@@ -126,6 +142,34 @@ export default function Dashboard() {
         <p className="opacity-90 mb-4 relative z-10 max-w-xl">
           Consistency is key. You've applied to {jobsThisWeek} jobs this week and completed {dsaThisWeek} DSA problems. Keep pushing forward.
         </p>
+        
+        {(profile?.dsa_target > 0 || profile?.job_target > 0) && (
+          <div className="space-y-3 mb-4 max-w-xl relative z-10 bg-black/10 p-4 rounded-xl border border-white/10">
+            {profile.dsa_target > 0 && (
+              <div>
+                <div className="flex justify-between text-sm mb-1 font-medium">
+                  <span>Daily DSA Goal</span>
+                  <span>{dsaToday} / {profile.dsa_target}</span>
+                </div>
+                <div className="w-full bg-black/20 rounded-full h-2">
+                  <div className="bg-white rounded-full h-2 transition-all duration-500" style={{ width: `${Math.min((dsaToday / profile.dsa_target) * 100, 100)}%` }}></div>
+                </div>
+              </div>
+            )}
+            {profile.job_target > 0 && (
+              <div>
+                <div className="flex justify-between text-sm mb-1 font-medium">
+                  <span>Daily Job Apps Goal</span>
+                  <span>{jobsToday} / {profile.job_target}</span>
+                </div>
+                <div className="w-full bg-black/20 rounded-full h-2">
+                  <div className="bg-white rounded-full h-2 transition-all duration-500" style={{ width: `${Math.min((jobsToday / profile.job_target) * 100, 100)}%` }}></div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex gap-4 relative z-10">
           <div className="bg-white/20 backdrop-blur-sm rounded-lg px-4 py-2">
             <span className="text-sm font-medium">Current Streak: </span>
