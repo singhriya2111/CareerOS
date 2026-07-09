@@ -25,9 +25,9 @@ export function useAnalytics() {
   });
 }
 
-export const incrementAnalytics = async (userId, type, amount = 1) => {
+export const incrementAnalytics = async (userId, type, amount = 1, dateOverride = null) => {
   if (!userId) return;
-  const dateStr = new Date().toISOString().split('T')[0];
+  const dateStr = dateOverride || new Date().toISOString().split('T')[0];
   
   const { data: existing, error: fetchError } = await supabase
     .from('analytics_log')

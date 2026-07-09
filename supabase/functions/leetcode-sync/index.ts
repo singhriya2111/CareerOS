@@ -38,13 +38,16 @@ serve(async (req) => {
       })
     }
 
-    const { username } = await req.json()
+    const { username, clientDate } = await req.json()
     if (!username) {
       return new Response(JSON.stringify({ error: 'Username is required' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       })
     }
+    
+    // Default to today in UTC if client doesn't provide it
+    const todayStr = clientDate || new Date().toISOString().split('T')[0];
 
     // 1. Fetch Recent Submissions
     const leetcodeHeaders = {
@@ -80,7 +83,7 @@ serve(async (req) => {
     const submissionsData = await submissionsRes.json();
     const submissions = submissionsData.data?.recentSubmissionList || [];
 
-    // Filter accepted and get unique titleSlugs
+    // Filter accepted and get unique titles (not just slugs, since we compare by title in DB)
     const accepted = submissions.filter((sub: any) => sub.statusDisplay === 'Accepted');
     const uniqueSlugs = new Set();
     const uniqueAccepted = [];
@@ -92,10 +95,38 @@ serve(async (req) => {
       }
     }
 
-    const upsertPayload = [];
+    if (uniqueAccepted.length === 0) {
+      return new Response(JSON.stringify({ message: 'No new accepted submissions found', count: 0, newSubmissions: [] }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
+    }
 
-    // 2. Fetch Question Data for each unique submission
-    for (const sub of uniqueAccepted) {
+    // Check which ones already exist in the database for this user
+    const titles = uniqueAccepted.map((s: any) => s.title);
+    const { data: existingData } = await supabaseClient
+      .from('dsa_problems')
+      .select('title')
+      .in('title', titles)
+      .eq('user_id', user.id);
+
+    const existingTitles = new Set(existingData?.map((r: any) => r.title) || []);
+    
+    // Only process TRULY NEW submissions
+    const newSubmissions = uniqueAccepted.filter((s: any) => !existingTitles.has(s.title));
+
+    if (newSubmissions.length === 0) {
+      return new Response(JSON.stringify({ message: 'No new accepted submissions found', count: 0, newSubmissions: [] }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
+    }
+
+    const upsertPayload = [];
+    const backfillAnalytics = []; // Array to hold { title, date }
+
+    // 2. Fetch Question Data for each NEW unique submission
+    for (const sub of newSubmissions) {
       const questionRes = await fetch('https://leetcode.com/graphql', {
         method: 'POST',
         headers: leetcodeHeaders,
@@ -129,10 +160,18 @@ serve(async (req) => {
         status: 'Solved',
         next_review: nextReviewDate.toISOString().split('T')[0]
       });
+
+      // Calculate the exact date this was solved on LeetCode
+      // timestamp from LeetCode is UNIX string like "1710000000"
+      const solvedDate = new Date(parseInt(sub.timestamp) * 1000);
+      backfillAnalytics.push({
+        title: sub.title,
+        date: solvedDate.toISOString().split('T')[0]
+      });
     }
 
     if (upsertPayload.length === 0) {
-      return new Response(JSON.stringify({ message: 'No new accepted submissions found', count: 0 }), {
+      return new Response(JSON.stringify({ message: 'No new accepted submissions found', count: 0, newSubmissions: [] }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       })
@@ -150,7 +189,7 @@ serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ message: 'Successfully synced', count: upsertPayload.length }), {
+    return new Response(JSON.stringify({ message: 'Successfully synced', count: upsertPayload.length, newSubmissions: backfillAnalytics }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })

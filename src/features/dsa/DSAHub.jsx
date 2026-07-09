@@ -60,8 +60,10 @@ export default function DSAHub() {
     localStorage.setItem('leetcode_username', lcUsername);
 
     try {
+      // Send the user's local date so the backend knows what "today" means
+      const localDateStr = new Date().toLocaleDateString('en-CA'); // en-CA gives YYYY-MM-DD
       const { data, error } = await supabase.functions.invoke('leetcode-sync', {
-        body: { username: lcUsername }
+        body: { username: lcUsername, clientDate: localDateStr }
       });
       
       if (error) {
@@ -80,9 +82,12 @@ export default function DSAHub() {
       }
 
       setSyncMessage(`Successfully synced ${data.count} new solved problems to your roadmap!`);
-      if (data.count > 0) {
+      if (data.count > 0 && data.newSubmissions) {
         queryClient.invalidateQueries({ queryKey: ['dsa', user?.id] });
-        incrementAnalytics(user.id, 'dsa', data.count);
+        // Accurately backfill analytics based on the exact LeetCode timestamp
+        for (const sub of data.newSubmissions) {
+          await incrementAnalytics(user.id, 'dsa', 1, sub.date);
+        }
       }
       setTimeout(() => setSyncMessage(''), 5000);
     } catch (err) {
