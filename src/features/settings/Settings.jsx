@@ -133,7 +133,6 @@ export default function Settings() {
               try {
                 const { data, error, count } = await supabase.from('analytics_log')
                   .update({ dsa_solves: 0 })
-                  .gte('date', '2026-07-07')
                   .eq('user_id', user.id)
                   .select();
                 

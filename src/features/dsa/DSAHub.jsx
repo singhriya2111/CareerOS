@@ -5,18 +5,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { useAnalytics, incrementAnalytics } from '../../hooks/useAnalytics';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
-import { Doughnut, Bar } from 'react-chartjs-2';
-
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
+// Chart components removed
 
 export default function DSAHub() {
   const { data: problems, isLoading, error } = useDSA();
+  const { data: analyticsLog } = useAnalytics();
   const addDSA = useAddDSA();
   const updateDSA = useUpdateDSA();
   const deleteDSA = useDeleteDSA();
-  
-  const { data: analyticsLog } = useAnalytics();
 
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -104,56 +100,7 @@ export default function DSAHub() {
   const filteredProblems = problems ? problems.filter(p => showStarredOnly ? p.starred : true) : [];
   const solvedProblems = problems ? problems.filter(p => p.status === 'Solved') : [];
   
-  const diffCounts = solvedProblems.reduce((acc, curr) => {
-    acc[curr.difficulty] = (acc[curr.difficulty] || 0) + 1;
-    return acc;
-  }, { Easy: 0, Medium: 0, Hard: 0 });
-
-  const doughnutData = {
-    labels: ['Easy', 'Medium', 'Hard'],
-    datasets: [{
-      data: [diffCounts.Easy, diffCounts.Medium, diffCounts.Hard],
-      backgroundColor: ['#10b981', '#f59e0b', '#e11d48'],
-      borderWidth: 0,
-      hoverOffset: 4
-    }]
-  };
-
-  const currentMonth = new Date().getMonth();
-  const currentMonthName = new Date().toLocaleString('default', { month: 'long' });
-  const currentYear = new Date().getFullYear();
-  const weeklyCounts = [0, 0, 0, 0];
-  
-  if (solvedProblems) {
-    solvedProblems.forEach(p => {
-      if (!p.created_at) return;
-      const d = new Date(p.created_at);
-      if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
-        const date = d.getDate();
-        if (date <= 7) weeklyCounts[0]++;
-        else if (date <= 14) weeklyCounts[1]++;
-        else if (date <= 21) weeklyCounts[2]++;
-        else weeklyCounts[3]++;
-      }
-    });
-  }
-
-  const barData = {
-    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-    datasets: [{
-      label: 'Solved',
-      data: weeklyCounts,
-      backgroundColor: '#3b82f6',
-      borderRadius: 4,
-    }]
-  };
-  
-  const barOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-  };
+  // Chart logic removed
 
   return (
     <div className="space-y-6 relative">
@@ -203,30 +150,7 @@ export default function DSAHub() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 shadow-sm flex flex-col">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Difficulty Distribution</h3>
-          <div className="h-48 w-full flex items-center justify-center relative">
-            {solvedProblems.length > 0 ? (
-              <Doughnut data={doughnutData} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }} />
-            ) : (
-              <div className="text-sm text-gray-400">No solved problems yet</div>
-            )}
-            {solvedProblems.length > 0 && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-8">
-                <span className="text-2xl font-bold">{solvedProblems.length}</span>
-              </div>
-            )}
-          </div>
-        </div>
-        
-        <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 shadow-sm flex flex-col">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Weekly Solves ({currentMonthName})</h3>
-          <div className="h-48 w-full">
-            <Bar data={barData} options={barOptions} />
-          </div>
-        </div>
-      </div>
+      {/* Charts have been removed from here */}
 
       <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900/50 rounded-xl p-3 flex items-start gap-3 text-sm text-yellow-800 dark:text-yellow-500">
         <Info className="w-5 h-5 shrink-0 mt-0.5" />
