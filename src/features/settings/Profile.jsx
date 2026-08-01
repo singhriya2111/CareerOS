@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useProfile, useUpdateProfile } from '../../hooks/useProfile';
-import { User, Target, CheckCircle2 } from 'lucide-react';
+import { User, Target, Code2, CheckCircle2 } from 'lucide-react';
 
 export default function Profile() {
   const { user } = useAuth();
@@ -14,12 +14,20 @@ export default function Profile() {
   const [displayName, setDisplayName] = useState('');
   const [dsaTarget, setDsaTarget] = useState(0);
   const [jobTarget, setJobTarget] = useState(0);
+  const [bio, setBio] = useState('');
+  const [githubUrl, setGithubUrl] = useState('');
+  const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [portfolioUrl, setPortfolioUrl] = useState('');
 
   useEffect(() => {
     if (profile) {
       setDisplayName(profile.display_name || '');
       setDsaTarget(profile.dsa_target || 0);
       setJobTarget(profile.job_target || 0);
+      setBio(profile.bio || '');
+      setGithubUrl(profile.github_url || '');
+      setLinkedinUrl(profile.linkedin_url || '');
+      setPortfolioUrl(profile.portfolio_url || '');
     }
   }, [profile]);
 
@@ -27,7 +35,11 @@ export default function Profile() {
     updateProfile.mutate({
       display_name: displayName,
       dsa_target: Number(dsaTarget),
-      job_target: Number(jobTarget)
+      job_target: Number(jobTarget),
+      bio: bio,
+      github_url: githubUrl,
+      linkedin_url: linkedinUrl,
+      portfolio_url: portfolioUrl
     }, {
       onSuccess: () => {
         setSavedMessage('Profile updated successfully!');
@@ -89,6 +101,52 @@ export default function Profile() {
                   min="0"
                   value={jobTarget}
                   onChange={(e) => setJobTarget(e.target.value)}
+                  className="w-full px-4 py-2 bg-transparent border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-6 border-t border-[var(--border)]">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><Code2 className="w-5 h-5 text-purple-500" /> Section C: Developer Profile</h3>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">Add your social links and bio to display on your Career Vault.</p>
+            <div className="space-y-4 max-w-md">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bio (Short Description)</label>
+                <textarea
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Full-stack engineer passionate about..."
+                  className="w-full px-4 py-2 bg-transparent border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] outline-none min-h-[80px]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">GitHub URL</label>
+                <input
+                  type="text"
+                  value={githubUrl}
+                  onChange={(e) => setGithubUrl(e.target.value)}
+                  placeholder="https://github.com/..."
+                  className="w-full px-4 py-2 bg-transparent border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">LinkedIn URL</label>
+                <input
+                  type="text"
+                  value={linkedinUrl}
+                  onChange={(e) => setLinkedinUrl(e.target.value)}
+                  placeholder="https://linkedin.com/in/..."
+                  className="w-full px-4 py-2 bg-transparent border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Portfolio URL</label>
+                <input
+                  type="text"
+                  value={portfolioUrl}
+                  onChange={(e) => setPortfolioUrl(e.target.value)}
+                  placeholder="https://myportfolio.com"
                   className="w-full px-4 py-2 bg-transparent border border-[var(--border)] rounded-lg focus:ring-2 focus:ring-[var(--primary)] outline-none"
                 />
               </div>

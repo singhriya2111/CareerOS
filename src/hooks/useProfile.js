@@ -34,7 +34,11 @@ export function useProfile() {
         dsa_target: 0,
         job_target: 0,
         default_tab: 'Dashboard',
-        theme: 'dark'
+        theme: 'dark',
+        bio: '',
+        github_url: '',
+        linkedin_url: '',
+        portfolio_url: ''
       };
     },
     enabled: !!user,
